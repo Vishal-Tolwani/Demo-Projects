@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #text-display {
+            border: 1px solid #ccc;
+            padding: 10px;
+            min-height: 100px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        #text-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Typing Speed Test</h1>
+        <div id="text-display"></div>
+        <textarea id="text-input" placeholder="Start typing here..."></textarea>
+        <div class="results">
+            <p>Time: <span id="time">60</span> seconds</p>
+            <p>Words per minute: <span id="wpm">0</span></p>
+            <p>Characters per minute: <span id="cpm">0</span></p>
+            <p>Accuracy: <span id="accuracy">100</span>%</p>
+        </div>
+    </div>
+
+    <script>
+        const textDisplay = document.getElementById('text-display');
+        const textInput = document.getElementById('text-input');
+        const timeDisplay = document.getElementById('time');
+        const wpmDisplay = document.getElementById('wpm');
+        const cpmDisplay = document.getElementById('cpm');
+        const accuracyDisplay = document.getElementById('accuracy');
+
+        let startTime;
+        let text = "";
+        let timeLeft = 60;
+        let timerInterval;
+
+        const texts = [
+            "The quick brown fox jumps over the lazy dog.",
+            "Programming is a challenging but rewarding skill.",
+            "Practice makes perfect.",
+            "This is a sample text for the typing test.",
+            "Coding is fun and exciting.",
+            "Always strive to learn new things.",
+            "Hello World, this is a test.",
+            "Practice typing every day to improve your speed."
+        ];
+
+        function loadText() {
+            const randomIndex = Math.floor(Math.random() * texts.length);
+            text = texts[randomIndex];
+            textDisplay.textContent = text;
+        }
+
+        textInput.addEventListener('input', () => {
+            if (!startTime) {
+                startTime = new Date();
+                timerInterval = setInterval(updateTimer, 1000);
+            }
+
+            const typedText = textInput.value;
+            highlightText(typedText);
+	
+	 if (typedText === text || timeLeft <= 0 ) { // Check for text completion
+                endTest();
+            }
+        });
+
+        function highlightText(typedText) {
+            let highlightedText = "";
+            const words = text.split(" ");
+            const typedWords = typedText.split(" ");
+            let currentWordIndex = 0;
+
+            for (let i = 0; i < words.length; i++) {
+                let wordHighlight = "";
+                if (i < typedWords.length) {
+                    const typedWord = typedWords[i];
+                    let correctChars = 0;
+
+                    if (i === typedWords.length - 1) {
+                        currentWordIndex = i;
+                        for (let j = 0; j < words[i].length; j++) {
+                            if (j < typedWord.length && words[i][j] === typedWord[j]) {
+                                wordHighlight += `<span style="color: green;">${words[i][j]}</span>`;
+                                correctChars++;
+                            } else {
+                                wordHighlight += `<span style="color: red;">${words[i][j]}</span>`;
+                            }
+                        }
+                        wordHighlight += words[i].slice(typedWord.length);
+
+                    } else if (i < typedWords.length - 1) {
+                        for (let j = 0; j < words[i].length; j++) {
+                            if (words[i][j] === typedWords[i][j]) {
+                                wordHighlight += `<span style="color: green;">${words[i][j]}</span>`;
+                                correctChars++;
+                            } else {
+                                wordHighlight += `<span style="color: red;">${words[i][j]}</span>`;
+                            }
+                        }
+                    } else {
+                        wordHighlight += words[i];
+                    }
+
+                } else {
+                    wordHighlight += words[i];
+                }
+
+                highlightedText += wordHighlight + " ";
+            }
+            textDisplay.innerHTML = highlightedText;
+
+            const currentWordElement = textDisplay.querySelector(`span:nth-child(${currentWordIndex + 1})`);
+            if (currentWordElement) {
+                currentWordElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            timeDisplay.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                endTest();
+            }
+            calculateWPM();
+            calculateCPM();
+            calculateAccuracy();
+        }
+
+        function calculateWPM() {
+            const typedWords = textInput.value.split(/\s+/).filter(word => word !== "").length;
+            const wpm = (typedWords / (60 - timeLeft)) * 60;
+            wpmDisplay.textContent = wpm > 0 ? wpm.toFixed(0) : 0;
+        }
+
+        function calculateCPM() {
+            const typedChars = textInput.value.length;
+            const cpm = (typedChars / (60 - timeLeft)) * 60;
+            cpmDisplay.textContent = cpm > 0 ? cpm.toFixed(0) : 0;
+        }
+
+        function calculateAccuracy() {
+            let correctChars = 0;
+            const typedText = textInput.value;
+            const words = text.split(" ");
+            const typedWords = typedText.split(" ");
+
+            for (let i = 0; i < Math.min(words.length, typedWords.length); i++) {
+                const word = words[i];
+                const typedWord = typedWords[i];
+                for (let j = 0; j < Math.min(word.length, typedWord.length); j++) {
+                    if (word[j] === typedWord[j]) {
+                        correctChars++;
+                    }
+                }
+            }
+
+            const totalChars = typedText.length;
+            const accuracy = totalChars > 0 ? (correctChars / totalChars) * 100 : 100;
+            accuracyDisplay.textContent = accuracy.toFixed(0);
+        }
+
+        function endTest() {
+            clearInterval(timerInterval);
+            textInput.disabled = true;
+            updateTimer();
+        }
+
+        loadText();
+    </script>
+
+</body>
+</html>
